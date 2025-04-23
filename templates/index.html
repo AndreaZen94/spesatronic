@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Expenses</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --danger-color: #f44336;
+            --text-color: #333;
+            --light-bg: #f9f9f9;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            margin-bottom: 0;
+        }
+        
+        .reset-btn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        
+        .flash-message {
+            background-color: #dff0d8;
+            color: #3c763d;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--light-bg);
+        }
+        
+        .action-link {
+            color: var(--danger-color);
+            text-decoration: none;
+        }
+        
+        .action-link:hover {
+            text-decoration: underline;
+        }
+        
+        .balance-card {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .positive {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .negative {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .neutral {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .settlement-item {
+            background-color: #e8f4f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .people-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .person-item {
+            background-color: var(--light-bg);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .remove-person {
+            margin-left: 5px;
+            color: var(--danger-color);
+            cursor: pointer;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Expense Splitter</h1>
+            <a href="{{ url_for('reset') }}" class="reset-btn" onclick="return confirm('Are you sure? This will delete all data!');">Reset All Data</a>
+        </div>
+        
+        {% if get_flashed_messages() %}
+        <div class="flash-messages">
+            {% for message in get_flashed_messages() %}
+                <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <h2>Group Members</h2>
+                    
+                    <div class="people-list">
+                        {% for person in data.people %}
+                            <div class="person-item">
+                                {{ person }}
+                                <a href="{{ url_for('remove_person', person=person) }}" class="remove-person" 
+                                   onclick="return confirm('Remove {{ person }}? This will affect expense calculations.');">×</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <form action="{{ url_for('add_person') }}" method="post">
+                        <div class="form-group">
+                            <label for="person_name">Add New Person</label>
+                            <div style="display: flex;">
+                                <input type="text" id="person_name" name="person_name" required 
+                                       placeholder="Enter name">
+                                <button type="submit" style="margin-left: 10px; white-space: nowrap;">Add Person</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <h2>Add New Expense</h2>
+                    <form action="{{ url_for('add_expense') }}" method="post">
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" name="description" required
+                                   placeholder="Enter expense description">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <input type="number" id="amount" name="amount" step="0.01" required
+                                   placeholder="Enter amount">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="paid_by">Paid By</label>
+                            <select id="paid_by" name="paid_by" required>
+                                <option value="" disabled selected>Select who paid</option>
+                                {% for person in data.people %}
+                                    <option value="{{ person }}">{{ person }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Split Among</label>
+                            <div class="checkbox-group">
+                                {% for person in data.people %}
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="split_{{ person }}" name="split_among" 
+                                               value="{{ person }}">
+                                        <label for="split_{{ person }}">{{ person }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <small>Leave all unchecked to split among everyone</small>
+                        </div>
+                        
+                        <button type="submit">Add Expense</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div>
+                <div class="card">
+                    <h2>Balances</h2>
+                    {% if balances %}
+                        {% for person, balance in balances.items() %}
+                            <div class="balance-card 
+                                {% if balance > 0.01 %}positive
+                                {% elif balance < -0.01 %}negative
+                                {% else %}neutral{% endif %}">
+                                <strong>{{ person }}:</strong> 
+                                {% if balance > 0.01 %}
+                                    is owed ${{ "%.2f"|format(balance) }}
+                                {% elif balance < -0.01 %}
+                                    owes ${{ "%.2f"|format(-balance) }}
+                                {% else %}
+                                    is settled up
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No balances to show yet. Add some expenses!</p>
+                    {% endif %}
+                </div>
+                
+                <div class="card">
+                    <h2>Settlements</h2>
+                    {% if settlements %}
+                        {% for settlement in settlements %}
+                            <div class="settlement-item">
+                                <strong>{{ settlement.from }}</strong> pays 
+                                <strong>{{ settlement.to }}</strong>: 
+                                ${{ "%.2f"|format(settlement.amount) }}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No settlements needed yet.</p>
+                    {% endif %}
+                </div>
+                
+                <div class="card">
+                    <h2>Expense History</h2>
+                    {% if data.expenses %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Paid By</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in data.expenses|sort(attribute='id', reverse=true) %}
+                                    <tr>
+                                        <td>{{ expense.description }}</td>
+                                        <td>${{ "%.2f"|format(expense.amount) }}</td>
+                                        <td>{{ expense.paid_by }}</td>
+                                        <td>{{ expense.date }}</td>
+                                        <td>
+                                            <a href="{{ url_for('remove_expense', expense_id=expense.id) }}" 
+                                               class="action-link"
+                                               onclick="return confirm('Delete this expense?');">
+                                                Delete
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No expenses added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
